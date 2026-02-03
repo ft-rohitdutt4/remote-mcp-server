@@ -9,11 +9,6 @@ import secrets
 import hashlib
 from datetime import datetime
 
-# ---------------------------------------------------------------------------
-# FastMCP Cloud uses an ephemeral filesystem. tempdir is the only writable
-# location, but it resets on each cold start.  For a production deployment
-# you would swap this out for an external database (Postgres, etc.).
-# ---------------------------------------------------------------------------
 TEMP_DIR = tempfile.gettempdir()
 DB_PATH = os.path.join(TEMP_DIR, "expenses.db")
 
@@ -21,10 +16,6 @@ print(f"Database path: {DB_PATH}")
 
 mcp = FastMCP("ExpenseTracker")
 
-# ---------------------------------------------------------------------------
-# DB init — single source of truth.  Users now live in the same DB so we
-# never need to write to the repo directory (which is read-only on Cloud).
-# ---------------------------------------------------------------------------
 def init_db():
     """Initialize database tables (expenses + users)."""
     try:
@@ -73,9 +64,6 @@ def init_db():
 
 init_db()
 
-# ---------------------------------------------------------------------------
-# Auth helpers
-# ---------------------------------------------------------------------------
 def _hash_password(password: str, salt: str) -> str:
     """PBKDF2-SHA256 with 260k iterations — safe for public-facing use."""
     return hashlib.pbkdf2_hmac(
@@ -99,10 +87,6 @@ async def _authenticate(api_key: str) -> str:
         raise ValueError("Invalid API key")
     return row[0]
 
-
-# ---------------------------------------------------------------------------
-# Tools
-# ---------------------------------------------------------------------------
 @mcp.tool()
 async def register_user(email: str, name: str, password: str):
     """Register a new user account and receive your API key.
@@ -327,10 +311,7 @@ async def delete_expense(expense_id: int, api_key: str):
     except Exception as e:
         return {"status": "error", "message": f"Error: {e}"}
 
-
-# ---------------------------------------------------------------------------
 # Resources
-# ---------------------------------------------------------------------------
 CATEGORIES = [
     "Food & Dining",
     "Transportation",
@@ -349,10 +330,6 @@ def categories():
     """Get the list of available expense categories."""
     return json.dumps({"categories": CATEGORIES}, indent=2)
 
-
-# ---------------------------------------------------------------------------
-# Local dev entry-point (ignored by FastMCP Cloud)
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print(" Expense Tracker MCP Server  (local dev)")
